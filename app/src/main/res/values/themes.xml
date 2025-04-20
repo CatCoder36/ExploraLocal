@@ -6,4 +6,9 @@
     </style>
 
     <style name="Theme.FirstExampleAndroid" parent="Base.Theme.FirstExampleAndroid" />
+
+    <style name="YellowRatingBar" parent="Widget.AppCompat.RatingBar.Indicator">
+        <item name="colorControlNormal">#D3D3D3</item> <!-- Color para estrellas vacías -->
+        <item name="colorControlActivated">#FFD700</item> <!-- Color dorado para estrellas llenas -->
+    </style>
 </resources>
