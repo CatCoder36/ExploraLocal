@@ -1,5 +1,7 @@
 # ExploraLocal - Android Location-Based App
 
+## Student: Fernando Mauricio Mamani Navarro
+
 ExploraLocal is a location-based Android application that allows users to discover, save, and share interesting places around them. The app uses Google Maps integration and provides features to manage place information including photos, ratings, and descriptions.
 
 ## Project Overview
