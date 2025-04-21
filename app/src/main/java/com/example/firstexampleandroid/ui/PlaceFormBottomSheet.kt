@@ -39,39 +39,36 @@ class PlaceFormBottomSheet(
     private var placeToEdit: Place? = null
     
     /**
-     * Shows the form to add a place
+     * Shows the form to add a new place
+     * 
+     * @param latLng The location coordinates of the place
      */
     fun show(latLng: LatLng) {
-        // Configure the BottomSheet
         bottomSheetView = LayoutInflater.from(context).inflate(R.layout.form_place, null)
         bottomSheetDialog = BottomSheetDialog(context)
         bottomSheetDialog.setContentView(bottomSheetView)
         
-        // Configure behavior
         val behavior = bottomSheetDialog.behavior
         behavior.state = BottomSheetBehavior.STATE_EXPANDED
         behavior.skipCollapsed = true
 
-        // Update title
         val tvTitle = bottomSheetView.findViewById<TextView>(R.id.tvTitle)
         tvTitle.text = "Nuevo Lugar"
         
-        // Update button text
         val btnSavePlace = bottomSheetView.findViewById<Button>(R.id.btnSavePlace)
         btnSavePlace.text = "Guardar ubicación"
         
-        // Initialize views
         initViews(latLng)
         
-        // Show the dialog
         bottomSheetDialog.show()
     }
     
     /**
      * Initializes and configures all form views
+     * 
+     * @param latLng The location coordinates of the place
      */
     private fun initViews(latLng: LatLng) {
-        // Get references to views
         val etNombre = bottomSheetView.findViewById<EditText>(R.id.etNombre)
         val etDescripcion = bottomSheetView.findViewById<EditText>(R.id.etDescripcion)
         val ratingBar = bottomSheetView.findViewById<RatingBar>(R.id.ratingBar)
@@ -84,56 +81,50 @@ class PlaceFormBottomSheet(
         photoPreviewContainer = bottomSheetView.findViewById(R.id.photoPreviewContainer)
         val btnRemovePhoto = bottomSheetView.findViewById<ImageButton>(R.id.btnRemovePhoto)
         
-        // Hide the preview container initially
         photoPreviewContainer.visibility = View.GONE
 
-         // Hide the preview container initially if not in edit mode
-         if (!isEditMode || currentPhotoUri == null) {
+        if (!isEditMode || currentPhotoUri == null) {
             photoPreviewContainer.visibility = View.GONE
         }
         
-        // Configure buttons
         setupButtons(btnClose, btnSavePlace, btnTakePhoto, btnUploadPhoto, btnRemovePhoto, etNombre, etDescripcion, ratingBar, latLng)
     }
 
     /**
      * Shows the form to edit an existing place
+     * 
+     * @param place The place to be edited
      */
     fun showEditMode(place: Place) {
         isEditMode = true
         placeToEdit = place
         currentPhotoUri = if (place.photoUrl != null) Uri.parse(place.photoUrl) else null
         
-        // Configure the BottomSheet
         bottomSheetView = LayoutInflater.from(context).inflate(R.layout.form_place, null)
         bottomSheetDialog = BottomSheetDialog(context)
         bottomSheetDialog.setContentView(bottomSheetView)
         
-        // Configure behavior
         val behavior = bottomSheetDialog.behavior
         behavior.state = BottomSheetBehavior.STATE_EXPANDED
         behavior.skipCollapsed = true
         
-        // Update title
         val tvTitle = bottomSheetView.findViewById<TextView>(R.id.tvTitle)
         tvTitle.text = "Editar Lugar"
         
-        // Update button text
         val btnSavePlace = bottomSheetView.findViewById<Button>(R.id.btnSavePlace)
         btnSavePlace.text = "Guardar cambios"
         
-        // Initialize views with the place's data
         initViews(LatLng(place.latitude, place.longitude))
         
-        // Populate form with place data
         populateFormWithPlaceData(place)
         
-        // Show the dialog
         bottomSheetDialog.show()
     }
     
     /**
      * Populates the form with data from an existing place
+     * 
+     * @param place The place whose data will be displayed in the form
      */
     private fun populateFormWithPlaceData(place: Place) {
         val etNombre = bottomSheetView.findViewById<EditText>(R.id.etNombre)
@@ -144,7 +135,6 @@ class PlaceFormBottomSheet(
         etDescripcion.setText(place.description)
         ratingBar.rating = place.rating
         
-        // Load image if exists
         if (place.photoUrl != null) {
             photoPreviewContainer.visibility = View.VISIBLE
             photoManager.displayPhotoInImageView(Uri.parse(place.photoUrl), photoImageView)
@@ -153,8 +143,18 @@ class PlaceFormBottomSheet(
         }
     }
     
-      /**
+    /**
      * Configures button events
+     * 
+     * @param btnClose Button to close the form
+     * @param btnSavePlace Button to save the place
+     * @param btnTakePhoto Button to take a photo
+     * @param btnUploadPhoto Button to upload a photo from gallery
+     * @param btnRemovePhoto Button to remove the current photo
+     * @param etNombre EditText for the place name
+     * @param etDescripcion EditText for the place description
+     * @param ratingBar RatingBar for the place rating
+     * @param latLng The location coordinates of the place
      */
     private fun setupButtons(
         btnClose: ImageButton,
@@ -167,18 +167,15 @@ class PlaceFormBottomSheet(
         ratingBar: RatingBar,
         latLng: LatLng
     ) {
-        // Close button
         btnClose.setOnClickListener {
             bottomSheetDialog.dismiss()
         }
         
-        // Button to remove photo
         btnRemovePhoto.setOnClickListener {
             currentPhotoUri = null
             photoPreviewContainer.visibility = View.GONE
         }
         
-        // Button to take photo
         btnTakePhoto.setOnClickListener {
             if (photoManager.hasCameraPermission()) {
                 photoManager.openCamera { uri ->
@@ -193,7 +190,6 @@ class PlaceFormBottomSheet(
             }
         }
         
-        // Button to upload photo
         btnUploadPhoto.setOnClickListener {
             photoManager.openGallery { uri ->
                 uri?.let {
@@ -204,7 +200,6 @@ class PlaceFormBottomSheet(
             }
         }
         
-        // Save button
         btnSavePlace.setOnClickListener {
             val nombre = etNombre.text.toString()
             val descripcion = etDescripcion.text.toString()
@@ -216,7 +211,6 @@ class PlaceFormBottomSheet(
             }
 
             val lugar = if (isEditMode && placeToEdit != null) {
-                // Crear una copia del lugar existente con los nuevos valores
                 placeToEdit!!.copy(
                     name = nombre,
                     description = descripcion,
@@ -224,7 +218,6 @@ class PlaceFormBottomSheet(
                     photoUrl = currentPhotoUri?.toString()
                 )
             } else {
-                // Crear un nuevo lugar
                 Place(
                     name = nombre,
                     description = descripcion,
@@ -243,5 +236,4 @@ class PlaceFormBottomSheet(
             bottomSheetDialog.dismiss()
         }
     }
-
 }

@@ -52,6 +52,9 @@ class NearbyPlacesFragment : Fragment() {
         getCurrentLocation()
     }
 
+    /**
+     * Sets up the RecyclerView with a LinearLayoutManager and an adapter.
+     */
     private fun setupRecyclerView() {
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         adapter = NearbyPlaceAdapter(emptyList()) { placeWithDistance ->
@@ -64,12 +67,19 @@ class NearbyPlacesFragment : Fragment() {
         recyclerView.adapter = adapter
     }
 
+    /**
+     * Observes changes in the ViewModel's allPlaces LiveData and updates the nearby places.
+     */
     private fun observeViewModel() {
         viewModel.allPlaces.observe(viewLifecycleOwner) { places ->
             updateNearbyPlaces(places)
         }
     }
 
+    /**
+     * Retrieves the current location using the MapsActivity's location helper.
+     * Updates the nearby places based on the current location.
+     */
     private fun getCurrentLocation() {
         loadingIndicator.visibility = View.VISIBLE
         
@@ -83,6 +93,11 @@ class NearbyPlacesFragment : Fragment() {
         }
     }
 
+    /**
+     * Updates the list of nearby places based on the current location and sorts them by distance.
+     *
+     * @param places List of places to be updated
+     */
     private fun updateNearbyPlaces(places: List<Place>) {
         loadingIndicator.visibility = View.GONE
         
@@ -111,30 +126,44 @@ class NearbyPlacesFragment : Fragment() {
         } ?: showEmptyState()
     }
 
+    /**
+     * Displays the empty state view when no places are available.
+     * Hides the recycler view and shows the empty state text.
+     */
     private fun showEmptyState() {
         recyclerView.visibility = View.GONE
         emptyStateText.visibility = View.VISIBLE
     }
 
+    /**
+     * Hides the empty state view when places are available.
+     * Shows the recycler view and hides the empty state text.
+     */
     private fun hideEmptyState() {
         recyclerView.visibility = View.VISIBLE
         emptyStateText.visibility = View.GONE
     }
 
+    /**
+     * Calculates the distance between two geographic coordinates using the Haversine formula.
+     *
+     * @param lat1 Latitude of the first point in degrees
+     * @param lon1 Longitude of the first point in degrees
+     * @param lat2 Latitude of the second point in degrees
+     * @param lon2 Longitude of the second point in degrees
+     * @return Distance between the points in meters
+     */
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val earthRadiusKm = 6371.0
         
-        // Convert to radians
         val dLat = Math.toRadians(lat2 - lat1)
         val dLon = Math.toRadians(lon2 - lon1)
         
-        // Haversine formula
         val a = sin(dLat / 2) * sin(dLat / 2) +
                 cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
                 sin(dLon / 2) * sin(dLon / 2)
         val c = 2 * atan2(sqrt(a), sqrt(1 - a))
         
-        // Distance in meters
         return earthRadiusKm * c * 1000
     }
 }

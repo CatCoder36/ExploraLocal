@@ -20,6 +20,10 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import dagger.hilt.android.AndroidEntryPoint
 
+/**
+ * Main activity for displaying maps and handling place-related operations.
+ * This activity manages map interactions, location updates, and navigation between fragments.
+ */
 @AndroidEntryPoint
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -37,20 +41,22 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     
     val viewModel: PlacesViewModel by viewModels()
 
+    /**
+     * Initializes the activity, sets up the UI components, and prepares the map.
+     *
+     * @param savedInstanceState State information saved from a previous instance
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
 
-        // Initialize helpers
         locationHelper = LocationHelper(this)
         photoManager = PhotoManager(this)
 
-        // Initialize bottom sheets
         placeFormBottomSheet = PlaceFormBottomSheet(this, photoManager) { place ->
             viewModel.addPlace(place)
         }
         
-        // Initialize fragments
         mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         placesListFragment = PlacesListFragment()
         nearbyPlacesFragment = NearbyPlacesFragment()
@@ -62,6 +68,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mapFragment.getMapAsync(this)
     }
 
+    /**
+     * Sets up location updates by checking permission and requesting continuous updates.
+     * Updates the currentLocation variable when a new location is received.
+     */
     private fun setupLocationUpdates() {
         locationHelper.checkLocationPermission {
             locationHelper.requestLocationUpdates { location ->
@@ -70,6 +80,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    /**
+     * Configures the bottom navigation view with appropriate listeners
+     * to handle fragment transitions based on user selection.
+     */
     private fun setupBottomNavigation() {
         val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         bottomNavigation.setOnItemSelectedListener { item ->
@@ -90,10 +104,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
         
-        // Default to map view
         bottomNavigation.selectedItemId = R.id.navigation_map
     }
 
+    /**
+     * Displays the selected fragment while hiding others.
+     * Handles special logic for the map fragment to ensure proper visibility.
+     *
+     * @param fragment The fragment to be displayed
+     */
     private fun showFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction().apply {
             if (fragment is SupportMapFragment) {
@@ -110,6 +129,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
     
+    /**
+     * Hides all fragments except the map fragment to maintain map visibility
+     * when other fragments are not active.
+     */
     private fun hideAllExceptMap() {
         supportFragmentManager.fragments.forEach { frag ->
             if (frag != mapFragment && frag.isAdded) {
@@ -118,12 +141,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    /**
+     * Sets up observers for LiveData objects from the ViewModel
+     * to update the UI when data changes.
+     */
     private fun setupObservers() {
         viewModel.allPlaces.observe(this) { places ->
             updateMapWithPlaces(places)
         }
     }
 
+    /**
+     * Updates the map with markers for each place in the provided list.
+     *
+     * @param places List of places to display on the map
+     */
     private fun updateMapWithPlaces(places: List<Place>) {
         if (::viewMap.isInitialized) {
             viewMap.clear()
@@ -140,6 +172,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    /**
+     * Callback that is triggered when the map is ready to be used.
+     * Sets up map click listeners and displays existing places.
+     *
+     * @param googleMap The GoogleMap instance that is ready
+     */
     override fun onMapReady(googleMap: GoogleMap) {
         viewMap = googleMap
 
@@ -154,6 +192,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         viewModel.allPlaces.value?.let { updateMapWithPlaces(it) }
     }
     
+    /**
+     * Cleans up resources when the activity is destroyed,
+     * particularly stopping location updates.
+     */
     override fun onDestroy() {
         super.onDestroy()
         locationHelper.stopLocationUpdates()
