@@ -9,6 +9,7 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.RatingBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -33,6 +34,9 @@ class PlaceFormBottomSheet(
     private lateinit var bottomSheetDialog: BottomSheetDialog
     private lateinit var photoImageView: ImageView
     private lateinit var photoPreviewContainer: ConstraintLayout
+
+    private var isEditMode = false
+    private var placeToEdit: Place? = null
     
     /**
      * Shows the form to add a place
@@ -47,6 +51,14 @@ class PlaceFormBottomSheet(
         val behavior = bottomSheetDialog.behavior
         behavior.state = BottomSheetBehavior.STATE_EXPANDED
         behavior.skipCollapsed = true
+
+        // Update title
+        val tvTitle = bottomSheetView.findViewById<TextView>(R.id.tvTitle)
+        tvTitle.text = "Nuevo Lugar"
+        
+        // Update button text
+        val btnSavePlace = bottomSheetView.findViewById<Button>(R.id.btnSavePlace)
+        btnSavePlace.text = "Guardar ubicación"
         
         // Initialize views
         initViews(latLng)
@@ -74,12 +86,74 @@ class PlaceFormBottomSheet(
         
         // Hide the preview container initially
         photoPreviewContainer.visibility = View.GONE
+
+         // Hide the preview container initially if not in edit mode
+         if (!isEditMode || currentPhotoUri == null) {
+            photoPreviewContainer.visibility = View.GONE
+        }
         
         // Configure buttons
         setupButtons(btnClose, btnSavePlace, btnTakePhoto, btnUploadPhoto, btnRemovePhoto, etNombre, etDescripcion, ratingBar, latLng)
     }
+
+    /**
+     * Shows the form to edit an existing place
+     */
+    fun showEditMode(place: Place) {
+        isEditMode = true
+        placeToEdit = place
+        currentPhotoUri = if (place.photoUrl != null) Uri.parse(place.photoUrl) else null
+        
+        // Configure the BottomSheet
+        bottomSheetView = LayoutInflater.from(context).inflate(R.layout.form_place, null)
+        bottomSheetDialog = BottomSheetDialog(context)
+        bottomSheetDialog.setContentView(bottomSheetView)
+        
+        // Configure behavior
+        val behavior = bottomSheetDialog.behavior
+        behavior.state = BottomSheetBehavior.STATE_EXPANDED
+        behavior.skipCollapsed = true
+        
+        // Update title
+        val tvTitle = bottomSheetView.findViewById<TextView>(R.id.tvTitle)
+        tvTitle.text = "Editar Lugar"
+        
+        // Update button text
+        val btnSavePlace = bottomSheetView.findViewById<Button>(R.id.btnSavePlace)
+        btnSavePlace.text = "Guardar cambios"
+        
+        // Initialize views with the place's data
+        initViews(LatLng(place.latitude, place.longitude))
+        
+        // Populate form with place data
+        populateFormWithPlaceData(place)
+        
+        // Show the dialog
+        bottomSheetDialog.show()
+    }
     
     /**
+     * Populates the form with data from an existing place
+     */
+    private fun populateFormWithPlaceData(place: Place) {
+        val etNombre = bottomSheetView.findViewById<EditText>(R.id.etNombre)
+        val etDescripcion = bottomSheetView.findViewById<EditText>(R.id.etDescripcion)
+        val ratingBar = bottomSheetView.findViewById<RatingBar>(R.id.ratingBar)
+        
+        etNombre.setText(place.name)
+        etDescripcion.setText(place.description)
+        ratingBar.rating = place.rating
+        
+        // Load image if exists
+        if (place.photoUrl != null) {
+            photoPreviewContainer.visibility = View.VISIBLE
+            photoManager.displayPhotoInImageView(Uri.parse(place.photoUrl), photoImageView)
+        } else {
+            photoPreviewContainer.visibility = View.GONE
+        }
+    }
+    
+      /**
      * Configures button events
      */
     private fun setupButtons(
@@ -137,22 +211,37 @@ class PlaceFormBottomSheet(
             val rating = ratingBar.rating
             
             if (nombre.isEmpty()) {
-                etNombre.error = "Please enter a name"
+                etNombre.error = "Por favor ingresa un nombre"
                 return@setOnClickListener
             }
 
-            val nuevoLugar = Place(
-                name = nombre,
-                description = descripcion,
-                latitude = latLng.latitude,
-                longitude = latLng.longitude,
-                rating = rating,
-                photoUrl = currentPhotoUri?.toString()
-            )
+            val lugar = if (isEditMode && placeToEdit != null) {
+                // Crear una copia del lugar existente con los nuevos valores
+                placeToEdit!!.copy(
+                    name = nombre,
+                    description = descripcion,
+                    rating = rating,
+                    photoUrl = currentPhotoUri?.toString()
+                )
+            } else {
+                // Crear un nuevo lugar
+                Place(
+                    name = nombre,
+                    description = descripcion,
+                    latitude = latLng.latitude,
+                    longitude = latLng.longitude,
+                    rating = rating,
+                    photoUrl = currentPhotoUri?.toString()
+                )
+            }
 
-            onSavePlace(nuevoLugar)
-            Toast.makeText(context, "Place saved", Toast.LENGTH_SHORT).show()
+            onSavePlace(lugar)
+            
+            val message = if (isEditMode) "Lugar actualizado" else "Lugar guardado"
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            
             bottomSheetDialog.dismiss()
         }
     }
+
 }

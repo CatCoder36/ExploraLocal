@@ -17,7 +17,18 @@ class PlacesViewModel
 
     fun addPlace(place: Place) {
         viewModelScope.launch {
-            repository.insert(place)
+            // Si el ID no es 0, estamos actualizando
+            if (place.id != 0) {
+                repository.update(place)
+            } else {
+                repository.insert(place)
+            }
+        }
+    }
+
+    fun deletePlace(place: Place) {
+        viewModelScope.launch {
+            repository.delete(place)
         }
     }
 }

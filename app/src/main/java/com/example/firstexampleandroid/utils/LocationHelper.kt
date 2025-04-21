@@ -3,14 +3,14 @@ package com.example.firstexampleandroid.utils
 import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Location
+import android.os.Looper
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.LatLng
@@ -24,6 +24,12 @@ class LocationHelper(private val context: AppCompatActivity) {
     
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var locationPermissionCallback: (() -> Unit)? = null
+    private var locationCallback: LocationCallback? = null
+    
+    companion object {
+        private const val LOCATION_UPDATE_INTERVAL = 10000L // 10 seconds
+    }
+    
     
     /**
      * Permission launcher for requesting location access.
@@ -94,5 +100,62 @@ class LocationHelper(private val context: AppCompatActivity) {
             context, 
             Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
+    }
+
+     /**
+     * Requests periodic location updates and passes them to the provided callback.
+     *
+     * @param onLocationUpdate Callback function that will be called when a new location is available
+     */
+    fun requestLocationUpdates(onLocationUpdate: (Location) -> Unit) {
+        if (!hasLocationPermission()) {
+            return
+        }
+        
+        // Get last known location first
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            location?.let {
+                onLocationUpdate(it)
+            }
+        }
+        
+        // Then set up continuous updates
+        val locationRequest = LocationRequest.create().apply {
+            interval = LOCATION_UPDATE_INTERVAL
+            fastestInterval = LOCATION_UPDATE_INTERVAL / 2
+            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        }
+        
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    onLocationUpdate(location)
+                }
+            }
+        }
+        
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            locationCallback?.let {
+                fusedLocationClient.requestLocationUpdates(
+                    locationRequest,
+                    it,
+                    Looper.getMainLooper()
+                )
+            }
+        }
+    }
+    
+    /**
+     * Stops location updates to conserve battery.
+     * Should be called in onDestroy() of the activity or fragment.
+     */
+    fun stopLocationUpdates() {
+        locationCallback?.let {
+            fusedLocationClient.removeLocationUpdates(it)
+        }
     }
 }

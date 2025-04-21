@@ -3,9 +3,13 @@
     <item
         android:id="@+id/navigation_map"
         android:icon="@drawable/ic_map"
-        android:title="Maps" />
+        android:title="Mapa" />
+    <item
+        android:id="@+id/navigation_nearby"
+        android:icon="@drawable/ic_nearby"
+        android:title="Lugares cercanos" />
     <item
         android:id="@+id/navigation_places"
         android:icon="@drawable/ic_list"
-        android:title="Lugares" />
+        android:title="Mis lugares" />
 </menu>
